@@ -214,12 +214,12 @@ class Tracker:
 
     def __init__(self, dimension= 3):
         self.F = np.array([[1., 1.],[0., 1.]])
-        self.H = np.array([1.0, 0.0])
+        self.H = np.array([[1.0, 0.0],[0.0, 0.0]])
         self.Q = np.ones([2, 2]) * 0.001
         self.R = 1
         self.dimension = dimension
 
-    def gnnsf(self, xk_1, position, H, th=10000000000):
+    def gnnsf(self, xk_1, position, H, th=10000000000000000000000):
         pos = np.matmul(H, xk_1)
         n = xk_1.shape[0]
         m = position.shape[0]
@@ -249,17 +249,22 @@ class Tracker:
         _pk_1 = np.matmul(np.matmul(F, pk), F.transpose()) + Q
 
         kk = np.divide(np.matmul(_pk_1, H.transpose()),
-                       (np.matmul(np.matmul(H, _pk_1), H.transpose()) + R).reshape(n, 1))
-        kk = kk.reshape(n, 2, 1)
+                       (np.matmul(np.matmul(H, _pk_1), H.transpose()) + R).reshape(n, 2, 2))
+        kk = kk.reshape(n, 2, 2)
+        # print("old_xk_1",_xk_1)
         zk_1, wl, new_p = self.gnnsf(_xk_1, position[0], H)
         _xk_1 = np.delete(_xk_1, wl, axis=0)
         _pk_1 = np.delete(_pk_1, wl, axis=0)
         kk = np.delete(kk, wl, axis=0)
 
         n = _xk_1.shape[0]
-        xk_1 = _xk_1 + np.matmul(kk, (zk_1 - np.matmul(H, _xk_1)).reshape(n, 1, self.dimension))
+        # print("kk",kk)
+        # print("zk",zk_1)
+        # print("matmul",np.matmul(H, _xk_1))
+        xk_1 = _xk_1 + np.matmul(kk, (zk_1 - np.matmul(H, _xk_1)).reshape(n, 2, self.dimension))
+        # print("new_xk_1",xk_1)
         H_ = np.repeat(np.expand_dims(H, axis=0), n, axis=0)
-        H_ = np.reshape(H_, [n, 1, 2])
+        H_ = np.reshape(H_, [n, 2, 2])
         I_ = np.repeat(np.expand_dims(np.identity(2), axis=0), n, axis=0)
         pk_1 = np.matmul(I_ - np.matmul(kk, H_), _pk_1)
         return xk_1, pk_1, new_p, wl

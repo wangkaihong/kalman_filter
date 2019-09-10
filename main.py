@@ -28,7 +28,7 @@ troj = [[i+j] for i,j in zip(original_troj,noise)]
 # print(troj)
 
 # vis(troj,original_troj)
-
+# print(np.array(troj))
 tracker = Tracker(dimension=3)
 lines,ret = tracker.track(troj)
 
