@@ -1,42 +1,40 @@
 from util import *
 import numpy as np
 import matplotlib.pyplot as plt
+import csv
+
+gt_f = "plane_data/plane_data_gt.csv"
+
+f = "plane_data/plane_data_measure_0.1.csv"
+output = "output3.csv"
+
+f = open(f,"r")
+reader1 = csv.reader(f)
+data = [i for i in reader1]
+title = data[0]
+data = np.array(data[1:])[:,1:].tolist()
+data = [[np.array(i,dtype=np.float)] for i in data]
+
+# gt_f = open(gt_f,"r")
+# reader2 = csv.reader(f)
+# gt = [i for i in reader2]
+# gt = np.array(gt[1:])[:,1:].tolist()
+# gt = [[np.array(i,dtype=np.float)] for i in gt]
+
+dimension = len(data[0][0])
+
+tracker = Tracker(dimension=dimension,Q=0.001,R=10,dtype=float)
+lines,ret = tracker.track(data)
+lines = np.array(lines[0],dtype=str)
+ind = np.array([[i] for i in range(1,501)],dtype=str)
+lines = np.hstack((ind,lines))
+lines = np.vstack((title,lines))
+
+print(lines.shape)
+
+writer = csv.writer(open(output,"w"))
+for i in lines:
+    writer.writerow(i)
 
 
-x_mag = 100
-y_mag = 200
-z_mag = 20000
 
-_x = [i for i in np.arange(-600., 600., 50)]
-_z = [140000 + z_mag * np.cos(i) for i in _x]
-_y = np.sin(_x) * 200
-
-# _t = [i for i in np.arange(-1.2, 1.2, 0.01)]
-# _x = [i*500 for i in _t]
-# _z = [140000 + z_mag * np.cos(i) for i in _t]
-# _y = np.sin(_t) * 200
-
-_dy = np.cos(_x)
-
-original_troj = np.vstack([_x, _y, _z]).T
-original_troj[:,0] *= x_mag
-original_troj[:,1] *= y_mag
-
-noise = np.random.randn(24,3)
-noise[:,0] *= x_mag * 50
-noise[:,1] *= y_mag * 50
-noise[:,2] *= z_mag * 0.1
-
-original_troj = [[i] for i in original_troj]
-troj = [[i+j] for i,j in zip(original_troj,noise)]
-
-# print(troj)
-
-# vis(troj,original_troj)
-# print(np.array(troj))
-tracker = Tracker(dimension=3)
-lines,ret = tracker.track(troj)
-
-vis_pred(troj,original_troj,ret)
-d1, d2 = compute_diff(troj,original_troj,ret)
-print(d1,d2)
